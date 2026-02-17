@@ -1,0 +1,156 @@
+dataset_conf:
+    na_conf:
+        csv_path: "tmp/ribo/rna_metadata.csv"
+        filtering:
+            min_len: 30
+            max_len: 500
+        is_training: True
+        sampler_conf:
+            max_batch_size: 20
+            max_num_res_squared: 800_000
+
+    na_test_conf:
+        csv_path: "tmp/rnasolo_metadata.csv"
+        filtering:
+            min_len: ${dataset_conf.na_conf.filtering.min_len}
+            max_len: ${dataset_conf.na_conf.filtering.max_len}
+        is_training: False
+        num_eval_lengths: 10
+        samples_per_eval_length: 3
+
+    ligand_conf:
+        csv_path: "tmp/ribo/rna_metadata_ligand.csv"
+        filtering:
+            min_len: ${dataset_conf.na_conf.filtering.min_len}
+            max_len: ${dataset_conf.na_conf.filtering.max_len}
+        is_training: ${dataset_conf.na_conf.is_training}
+
+evalsuite_conf:
+    eval_conf:
+        min_len: 75
+        max_len: 75
+        step_len: 10
+        length_subset: null
+        samples_per_length: 10
+    paths:
+        usalign_path: "src/deps/tools/USalign"
+        qtmclust_path: "src/deps/tools/qTMclust"
+        tmscore_path: "src/deps/tools/TMscore"
+        rnasolo_metadata_path: "tmp/rnasolo_metadata_new.csv"
+        rnasolo_path: "tmp/rnasolo"
+    constants:
+        tm_thresh: 0.45
+        rmsd_thresh: 4.3 # angstroms
+        seqlen_range: [30, 200]
+
+flow_module_conf:
+    tensorboard_dir: "tensorboard_dir"
+    flow_model_conf:
+        codesign: ${flow_module_conf.fm_conf.flow_aa}
+        node_embed_dim: 256
+        edge_embed_dim: 128
+        num_aa_types: 20
+        guide_by_condition: True
+        node_conf:
+            embed_aatype: false
+            node_embed_dim: ${flow_module_conf.flow_model_conf.node_embed_dim}
+            pos_embed_dim: 128
+            timestep_embed_dim: 128
+            num_aa_types: ${flow_module_conf.flow_model_conf.num_aa_types}
+        edge_conf:
+            node_embed_dim: ${flow_module_conf.flow_model_conf.node_embed_dim}
+            edge_embed_dim: ${flow_module_conf.flow_model_conf.edge_embed_dim}
+            hid_dim: 64
+            num_bins: 22
+            single_bias_transition_n: 2
+        ipa_conf:
+            ipa:
+                c_s: ${flow_module_conf.flow_model_conf.node_embed_dim}
+                c_z: ${flow_module_conf.flow_model_conf.edge_embed_dim}
+                c_hidden: 16
+                no_heads: 8
+                no_qk_points: 8
+                no_v_points: 12
+                seq_tfmr_num_heads: 4
+                seq_tfmr_num_layers: 4
+                num_blocks: 6
+            edge_embed_dim: ${flow_module_conf.flow_model_conf.edge_embed_dim}
+            # coordinate_scaling: 1.0
+        mol_conf:
+            num_atom_type: 95
+            node_embed_dim: ${flow_module_conf.flow_model_conf.node_embed_dim}
+            edge_embed_dim: ${flow_module_conf.flow_model_conf.edge_embed_dim}
+            ligand_rbf_d_min: 0.05
+            ligand_rbf_d_max: 6.0
+            num_rbf: 16
+        dist_conf:
+            edge_embed_dim: ${flow_module_conf.flow_model_conf.edge_embed_dim}
+            bb_ligand_rbf_d_min: 0.5
+            bb_ligand_rbf_d_max: 6.0
+            num_rbf: ${flow_module_conf.flow_model_conf.mol_conf.num_rbf}
+
+    fm_conf:
+        device: ${exp_conf.device}
+        num_tokens: ${flow_module_conf.flow_model_conf.num_aa_types}
+        flow_rot: True
+        flow_trans: True
+        flow_aa: False
+        min_t: 1e-2
+        codesign_separate_t: False
+        codesign_forward_fold_prop: 0.8
+        codesign_inverse_fold_prop: 0.5
+        num_timesteps: 200
+        self_condition: ${flow_module_conf.train_conf.self_condition}
+        r3_conf:
+            device: ${exp_conf.device}
+            batch_ot: True
+        so3_conf:
+            device: ${exp_conf.device}
+            train_schedule: linear
+            sample_schedule: exp
+            exp_rate: 2
+            resample_rotmat_t: False
+        aa_conf:
+            device: ${exp_conf.device}
+            interpolant_type: masking
+            noise: 10
+            temp: 0.4
+            do_purity: False
+
+    train_conf:
+        num_non_frame_atoms: 0 # [0, 3, 7]
+        bb_atom_scale: 0.1
+        trans_scale: 0.1
+        t_normal_clip: 0.9
+        aatypes_loss_use_likelihood_weighting: False
+        translation_loss_weight: 2.0
+        rotation_loss_weight: 1.0
+        aatypes_loss_weight: 0.0
+        aux_torsion_loss_weight: 1.0
+        aux_bb_loss_weight: 1.0
+        aux_pair_loss_weight: 1.0
+        aux_loss_use_bb_loss: True
+        aux_loss_use_pair_loss: True
+        aux_loss_use_torsion_loss: True
+        aux_loss_weight: 1.0
+        aux_loss_t_pass: 0.25
+        self_condition: True
+
+exp_conf:
+    device: "cuda"
+    log_dir: "logs"
+    flow_module_conf: ${flow_module_conf}
+    gradient_accumulation_steps: 1
+    optimizer:
+        lr: 1e-4
+    pretraining: True
+    dataset_conf: ${dataset_conf}
+    num_epoch: 100
+    max_grad_norm: 1.0
+    ckpt_dir: "ckpt"
+    tensorboard_dir: "tensorboard_dir"
+    validation_dir: "validation_dir"
+    evaluation_dir: "evaluation_dir"
+    evalsuite_conf: ${evalsuite_conf}
+    evaluation:
+        task: "unconditional"

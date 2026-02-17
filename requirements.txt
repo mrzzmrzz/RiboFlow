@@ -1,0 +1,19 @@
+beartype
+biopython
+biotite
+cpdb-protein
+dm-tree
+einops
+jaxtyping
+MDAnalysis
+ml_collections
+numpy
+omegaconf
+pandas
+tensorboard
+torch
+torch-geometric
+# torch_cluster
+tqdm
+rdkit
+einops

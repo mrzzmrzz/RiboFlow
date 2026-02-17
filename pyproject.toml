@@ -1,0 +1,41 @@
+[tool.ruff]
+line-length = 98
+fix = true
+cache-dir = "tmp/ruff_cache"
+
+[tool.ruff.format]
+docstring-code-format = true
+indent-style = "space"
+quote-style = "double"
+line-ending = "auto"
+
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+
+[tool.ruff.lint]
+ignore = ["E731", "F722", "F401"]
+
+[tool.pyright]
+venvPath = "/opt/homebrew/Caskroom/miniconda/base/envs"
+venv = "/opt/homebrew/Caskroom/miniconda/base/envs/flow"
+exclude = ["**/node_modules", "**/__pycache__", "eval_suite", "tmp"]
+typeCheckingMode = "standard"
+
+reportArgumentType = false
+reportAttributeAccessIssue = false
+reportOptionalMemberAccess = false
+reportOperatorIssue = false
+reportOptionalCall = false
+reportOptionalIterable = false
+reportOptionalOperand = false
+reportOptionalSubscript = false
+
+# reportAssignmentType = false
+# reportCallIssue = false
+# reportGeneralTypeIssues = false
+# reportPrivateImportUsage = false
+# reportReturnType = false
+# reportUnboundVariable = false
+# reportInvalidStringEscapeSequence = false
+# reportUntypedFunctionDecorator = false
